@@ -12,7 +12,7 @@ interface IProps {
 
 /**
  * Perspective library adds load to HTMLElement prototype.
- * This interface acts as a wrapper for Typescript compiler.
+ * This interface acts as a wrapper for the TypeScript compiler.
  */
 interface PerspectiveViewerElement {
   load: (table: Table) => void,
@@ -20,7 +20,7 @@ interface PerspectiveViewerElement {
 
 /**
  * React component that renders Perspective based on data
- * parsed from its parent through data property.
+ * parsed from its parent through the data property.
  */
 class Graph extends Component<IProps, {}> {
   // Perspective table
@@ -31,32 +31,45 @@ class Graph extends Component<IProps, {}> {
   }
 
   componentDidMount() {
-    // Get element to attach the table from the DOM.
-    const elem: PerspectiveViewerElement = document.getElementsByTagName('perspective-viewer')[0] as unknown as PerspectiveViewerElement;
-
+    // Get the element to attach the table from the DOM.
+    const elem: any = document.getElementsByTagName('perspective-viewer')[0];
+  
     const schema = {
       stock: 'string',
       top_ask_price: 'float',
       top_bid_price: 'float',
       timestamp: 'date',
     };
-
+  
     if (window.perspective && window.perspective.worker()) {
       this.table = window.perspective.worker().table(schema);
     }
-    if (this.table) {
+    if (this.table && elem) {
       // Load the `table` in the `<perspective-viewer>` DOM reference.
-
+  
       // Add more Perspective configurations here.
+      // Note that JSON.stringify is used to convert the aggregates object to a string, and the correct syntax for the object is used.
+      elem.setAttribute('view', 'y_line');
+      elem.setAttribute('column-pivots', '["stock"]');
+      elem.setAttribute('row-pivots', '["timestamp"]');
+      elem.setAttribute('columns', '["top_ask_price"]');
+      elem.setAttribute('aggregates', JSON.stringify({
+        "stock": "distinct count",
+        "top_ask_price": "avg",
+        "top_bid_price": "avg",
+        "timestamp": "distinct count",
+      }));
+  
       elem.load(this.table);
     }
   }
+  
 
   componentDidUpdate() {
-    // Everytime the data props is updated, insert the data into Perspective table
+    // Every time the data props are updated, insert the data into the Perspective table
     if (this.table) {
       // As part of the task, you need to fix the way we update the data props to
-      // avoid inserting duplicated entries into Perspective table again.
+      // avoid inserting duplicated entries into the Perspective table again.
       this.table.update(this.props.data.map((el: any) => {
         // Format the data from ServerRespond to the schema
         return {
